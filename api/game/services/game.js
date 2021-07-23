@@ -13,13 +13,41 @@ async function getGameInfo(slug) {
   const body = await axios.get(`https://www.gog.com/game/${slug}`);
   const dom = new JSDOM(body.data);
 
-  const description = dom.window.document.querySelector('.description');
+  const ratingElement = dom.window.document.querySelector(
+    ".age-restrictions__icon use"
+  );
+
+  const description = dom.window.document.querySelector(".description");
+  let rating_scale = ratingElement
+  ? ratingElement
+      .getAttribute("xlink:href")
+      .replace(/_/g, "")
+      .replace(/[^\w-]+/g, "")
+  : "FREE";
+
+  if (rating_scale.includes("BR")) {
+    const age = parseInt(rating_scale.replace("BR", ""));
+    let pegiAge = age;
+
+    if (age <= 3) {
+      pegiAge = 3;
+    } else if (age > 3 & age <= 7) {
+      pegiAge = 7;
+    } else if (age > 7 & age <= 12) {
+      pegiAge = 12;
+    } else if (age > 12 & age <= 16) {
+      pegiAge = 16;
+    } else if (age > 16) {
+      pegiAge = 18;
+    }
+    rating_scale = `pegi${pegiAge}`;
+  }
 
   return {
-    rating: 'FREE',
-    short_description: description.textContent.slice(0, 160),
-    description: description.innerHTML
-  }
+    rating: rating_scale,
+    short_description: description.textContent.trim().slice(0, 160),
+    description: description.innerHTML,
+  };
 }
 
 
